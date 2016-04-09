@@ -1,0 +1,61 @@
+server {
+  listen 443;
+  server_name @@HOSTNAME@@ www.@@HOSTNAME@@;
+  root "@@PATH@@";
+  server_name_in_redirect off;
+  access_log @@LOG_PATH@@/access.log;
+  error_log @@LOG_PATH@@/error.log;
+  index index.php index.html index.htm default.html default.htm;
+
+  # Support Clean (aka Search Engine Friendly) URLs
+  location / {
+    try_files $uri $uri/ /index.php?$args;
+  }
+
+  if ($http_user_agent ~* (Baiduspider|webalta|nikto|wkito|pikto|scan|acunetix|morfeus|webcollage|youdao)) {
+    return 401;
+  }
+
+  if ($http_user_agent ~* (HTTrack|clshttp|archiver|loader|email|harvest|extract|grab|miner)) {
+    return 401;
+  }
+
+  # deny running scripts inside writable directories
+  location ~* /(images|cache|media|logs|tmp)/.*\.(php|pl|py|jsp|asp|sh|cgi)$ {
+    return 403;
+    error_page 403 /403_error.html;
+  }
+
+  location ~ \.php$ {
+    fastcgi_pass  127.0.0.1:9000;
+    fastcgi_index index.php;
+    include fastcgi_params;
+    fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
+    include /etc/nginx/fastcgi.conf;
+  }
+
+  # caching of files
+  location ~* \.(ico|pdf|flv)$ {
+    expires 1y;
+  }
+
+  # deny running scripts inside writable directories
+  location ~* /(images|cache|media|logs|tmp)/.*\.(php|pl|py|jsp|asp|sh|cgi)$ {
+    return 403;
+    error_page 403 /403_error.html;
+  }
+
+  location ~* \.(js|css|png|jpg|jpeg|gif|ico)$ {
+    expires max;
+    log_not_found off;
+    access_log off;
+  }
+
+  location ~* \.(html|htm)$ {
+    expires 30m;
+  }
+
+  location ~* /\.(ht|git|svn) {
+    deny  all;
+  }
+}
